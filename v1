@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Marble Pattern Designer</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div id="marble-pattern-designer-widget">
+    <div class="mpd-container">
+      <div class="mpd-controls">
+        <div class="mpd-quick-actions">
+        </div>
+
+        <div class="mpd-control-group">
+          <label>Base Material</label>
+          <select id="mpd-baseColor">
+            <option value="#F3F3F3">White</option>
+            <option value="#353839">Black</option>
+            <option value="#EDEAE0">Natural</option>
+          </select>
+        </div>
+
+        <div id="mpd-accentControls"></div>
+
+        <button id="mpd-addAccent" class="mpd-button mpd-secondary-button">
+          <i class="fas fa-plus"></i> Add Accent Color
+        </button>
+        <button class="mpd-button mpd-secondary-button" id="mpd-randomizeBtn">
+          <i class="fas fa-random"></i> Randomize
+        </button>
+        <div class="mpd-action-buttons">
+          <a href="mailto:joseph@marbleplastics.com?subject=Quote Request for Custom Pattern" 
+             class="mpd-cta-button" id="mpd-getQuoteBtn">
+            <i class="fas fa-envelope"></i> Request Quote
+          </a>
+          <button class="mpd-cta-button mpd-download-button" id="mpd-downloadBtn">
+            <i class="fas fa-download"></i> Save Pattern
+          </button>
+        </div>
+      </div>
+
+      <div class="mpd-preview">
+        <div id="mpd-previewCanvas" class="mpd-preview-canvas"></div>
+        <div class="mpd-preview-info">
+          <p>4" × 6" sheet preview</p>
+          <p>Colors may vary slightly in final product</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #marble-pattern-designer-widget {
+      --mpd-primary-bg: #121212;
+      --mpd-secondary-bg: #1e1e1e;
+      --mpd-accent-color: #3498db;
+      --mpd-text-primary: #ffffff;
+      --mpd-text-secondary: #b3b3b3;
+      --mpd-border-radius: 8px;
+      
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--mpd-text-primary);
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      box-sizing: border-box;
+      background: var(--mpd-primary-bg);
+      border-radius: var(--mpd-border-radius);
+    }
+
+    #marble-pattern-designer-widget * {
+      box-sizing: border-box;
+    }
+
+    .mpd-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .mpd-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mpd-controls {
+      background: var(--mpd-secondary-bg);
+      padding: 20px;
+      border-radius: var(--mpd-border-radius);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .mpd-quick-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .mpd-quick-action-btn {
+      flex: 1;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: var(--mpd-text-primary);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .mpd-quick-action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .mpd-control-group {
+      margin-bottom: 8px;
+    }
+
+    .mpd-control-group label {
+      display: block;
+/*      margin-bottom: 5px;*/
+      color: var(--mpd-text-primary);
+      font-size: 0.9em;
+      margin-bottom: 3px;
+    }
+
+    .mpd-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--mpd-secondary-bg);
+      padding: 20px;
+      border-radius: var(--mpd-border-radius);
+    }
+
+    .mpd-preview-canvas {
+      width: 400px;
+      height: 600px;
+      background: white;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 500px) {
+      .mpd-preview-canvas {
+        width: 300px;
+        height: 450px;
+      }
+    }
+
+    .mpd-accent-control {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .mpd-accent {
+      position: absolute;
+      background-color: transparent;
+      pointer-events: none;
+    }
+
+    .mpd-preview-info {
+      margin-top: 15px;
+      text-align: center;
+      color: var(--mpd-text-secondary);
+    }
+/* Make the scroll area if needed */
+/*    #mpd-accentControls {
+      max-height: 300px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+        #mpd-accentControls::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    #mpd-accentControls::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    */
+
+
+    #marble-pattern-designer-widget select,
+    #marble-pattern-designer-widget button,
+    #marble-pattern-designer-widget input {
+      width: 100%;
+      padding: 6px;
+      background: var(--mpd-primary-bg);
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: var(--mpd-text-primary);
+      cursor: pointer;
+    }
+
+    /* Ensure dropdown options are always visible */
+    #marble-pattern-designer-widget select option {
+      background-color: var(--mpd-primary-bg);
+      color: var(--mpd-text-primary);
+    }
+
+    #marble-pattern-designer-widget select:hover,
+    #marble-pattern-designer-widget button:hover {
+      border-color: var(--mpd-accent-color);
+    }
+
+    .mpd-cta-button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      background: #E34234;
+      color: var(--mpd-text-primary);
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .mpd-cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .mpd-download-button {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .mpd-concentration-slider {
+      width: 100%;
+      margin: 10px 0;
+      -webkit-appearance: none;
+      background: var(--mpd-primary-bg);
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .mpd-concentration-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--mpd-accent-color);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .mpd-remove-accent {
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff4444;
+    }
+
+    /* Color picker styles */
+    .mpd-color-control {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mpd-color-control select {
+      flex: 1;
+    }
+
+    .mpd-color-picker-wrapper {
+      position: relative;
+      width: 32px;
+      height: 32px;
+    }
+
+    .mpd-color-picker {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+    }
+
+    .mpd-swatch {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .mpd-swatch:hover {
+      border-color: var(--mpd-accent-color);
+    }
+  </style>
+
+  <script>
+    const coolColors = {
+      'Red': '#E34234',
+      'Green': '#469496',
+      'Blue': '#6D9BC3',
+      'Yellow': '#E4D00A',
+      'Purple': '#B768A2',
+      'Aqua': '#7FFFD4',
+      'Grey': '#8C92AC',
+      'Orange': '#FF6137'
+    };
+
+    function createAccentControl() {
+      const control = document.createElement('div');
+      control.className = 'mpd-accent-control';
+      
+      let colorOptions = Object.entries(coolColors)
+        .map(([name, hex]) => `
+          <option value="${hex}">
+            ${name}
+          </option>
+        `).join('');
+
+      control.innerHTML = `
+        <div class="mpd-control-group">
+          <label>Accent Color</label>
+          <div class="mpd-color-control">
+            <select class="mpd-accent-color">
+              ${colorOptions}
+            </select>
+            <div class="mpd-color-picker-wrapper">
+              <input type="color" class="mpd-color-picker" value="${Object.values(coolColors)[0]}">
+              <button class="mpd-swatch" style="background-color: ${Object.values(coolColors)[0]}"></button>
+            </div>
+          </div>
+        </div>
+        <label>Concentration</label>
+        <input type="range" class="mpd-concentration-slider" min="0" max="100" value="50">
+        <button class="mpd-remove-accent mpd-button">Remove</button>
+      `;
+
+      const slider = control.querySelector('.mpd-concentration-slider');
+      const colorSelect = control.querySelector('.mpd-accent-color');
+      const colorPicker = control.querySelector('.mpd-color-picker');
+      const swatch = control.querySelector('.mpd-swatch');
+
+      // Update swatch when dropdown changes
+      colorSelect.addEventListener('change', (e) => {
+        const selectedColor = e.target.value;
+        colorPicker.value = selectedColor;
+        swatch.style.backgroundColor = selectedColor;
+        updatePreview();
+      });
+
+      // Update dropdown and swatch when color picker changes
+      colorPicker.addEventListener('input', (e) => {
+        const selectedColor = e.target.value;
+        swatch.style.backgroundColor = selectedColor;
+        colorSelect.value = selectedColor;
+        updatePreview();
+      });
+
+      // Open color picker when swatch is clicked
+      swatch.addEventListener('click', () => {
+        colorPicker.click();
+      });
+
+      slider.addEventListener('input', updatePreview);
+
+      control.querySelector('.mpd-remove-accent').addEventListener('click', () => {
+        control.remove();
+        updatePreview();
+      });
+
+      return control;
+    }
+
+    function generateOrganicShape() {
+      const points = [];
+      const numPoints = 10;
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * 2 * Math.PI;
+        const radius = Math.random() * 30 + 15;
+        const x = Math.cos(angle) * radius + 50;
+        const y = Math.sin(angle) * radius + 50;
+        points.push(`${x.toFixed(1)}% ${y.toFixed(1)}%`);
+      }
+      return `polygon(${points.join(', ')})`;
+    }
+
+    function updatePreview() {
+      const previewCanvas = document.getElementById('mpd-previewCanvas');
+      const baseColorSelect = document.getElementById('mpd-baseColor');
+      
+      previewCanvas.innerHTML = '';
+      const baseColor = baseColorSelect.value;
+      previewCanvas.style.backgroundColor = baseColor;
+
+      document.querySelectorAll('.mpd-accent-control').forEach(control => {
+        const colorControl = control.querySelector('.mpd-color-picker');
+        const color = colorControl.value;
+        const concentration = control.querySelector('.mpd-concentration-slider').value;
+        const particleCount = Math.pow(concentration / 100, 2) * 900;
+
+        for (let i = 0; i < particleCount; i++) {
+          const accent = document.createElement('div');
+          accent.className = 'mpd-accent';
+          accent.style.backgroundColor = color;
+
+          const size = Math.random() < 0.7 ? 
+            Math.random() * 17 + 3 : // 70% small particles
+            Math.random() * 20 + 30; // 30% large particles
+
+          accent.style.width = accent.style.height = `${size}px`;
+          
+          const canvas = document.getElementById('mpd-previewCanvas');
+          const canvasRect = canvas.getBoundingClientRect();
+          const xPos = Math.random() * (canvasRect.width - size);
+          const yPos = Math.random() * (canvasRect.height - size);
+          
+          accent.style.left = `${xPos}px`;
+          accent.style.top = `${yPos}px`;
+          accent.style.clipPath = generateOrganicShape();
+          
+          previewCanvas.appendChild(accent);
+        }
+      });
+    }
+
+    function randomizeDesign() {
+      const baseColorSelect = document.getElementById('mpd-baseColor');
+      const accentControlsContainer = document.getElementById('mpd-accentControls');
+      
+      // More varied base color selection
+      const baseColors = [
+        '#F3F3F3', // White
+        '#353839', // Black
+        '#EDEAE0', // Natural
+      ];
+      baseColorSelect.value = baseColors[Math.floor(Math.random() * baseColors.length)];
+
+
+
+
+
+
+      accentControlsContainer.innerHTML = '';
+      const numAccents = Math.floor(Math.random() * 3) + 2; // 1-5 accents
+      
+      const colorNames = Object.keys(coolColors);
+      const usedColors = new Set(); // Prevent duplicate colors
+      
+      for (let i = 0; i < numAccents; i++) {
+        const control = createAccentControl();
+        const slider = control.querySelector('.mpd-concentration-slider');
+        const colorSelect = control.querySelector('.mpd-accent-color');
+        const colorPicker = control.querySelector('.mpd-color-picker');
+        const swatch = control.querySelector('.mpd-swatch');
+        
+        // Pick a random unused color
+        let randomColorIndex;
+        do {
+          randomColorIndex = Math.floor(Math.random() * colorNames.length);
+        } while (usedColors.has(randomColorIndex) && usedColors.size < colorNames.length);
+        usedColors.add(randomColorIndex);
+        
+        const selectedColor = coolColors[colorNames[randomColorIndex]];
+        
+        // Update all color-related elements
+        colorSelect.selectedIndex = randomColorIndex;
+        colorPicker.value = selectedColor;
+        swatch.style.backgroundColor = selectedColor;
+        
+        // Randomize concentration
+        slider.value = Math.random() * 60 + 20;
+        
+        accentControlsContainer.appendChild(control);
+      }
+      
+      updatePreview();
+    }
+
+    async function downloadDesign() {
+      try {
+        const previewCanvas = document.getElementById('mpd-previewCanvas');
+        
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        const scale = 2;
+        
+        tempCanvas.width = previewCanvas.offsetWidth * scale;
+        tempCanvas.height = previewCanvas.offsetHeight * scale;
+        
+        ctx.fillStyle = previewCanvas.style.backgroundColor;
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        const accents = previewCanvas.getElementsByClassName('mpd-accent');
+        Array.from(accents).forEach(accent => {
+          const rect = accent.getBoundingClientRect();
+          const previewRect = previewCanvas.getBoundingClientRect();
+          
+          const x = (rect.left - previewRect.left) * scale;
+          const y = (rect.top - previewRect.top) * scale;
+          const size = parseFloat(accent.style.width) * scale;
+          
+          ctx.save();
+          ctx.translate(x, y);
+          
+          ctx.beginPath();
+          const points = accent.style.clipPath
+            .replace('polygon(', '')
+            .replace(')', '')
+            .split(',')
+            .map(point => {
+              const [x, y] = point.trim().split(' ').map(v => parseFloat(v));
+              return [x * size / 100, y * size / 100];
+            });
+          
+          ctx.moveTo(points[0][0], points[0][1]);
+          points.forEach(([x, y]) => {
+            ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+          
+          ctx.fillStyle = accent.style.backgroundColor;
+          ctx.fill();
+          
+          ctx.restore();
+        });
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+        const filename = `marble-plastics-pattern-${timestamp}.png`;
+        
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = tempCanvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        const successMsg = document.createElement('div');
+        successMsg.style.color = '#4CAF50';
+        successMsg.style.marginTop = '0.5rem';
+        successMsg.style.fontSize = '0.9rem';
+        successMsg.style.textAlign = 'center';
+        successMsg.textContent = 'Pattern saved successfully!';
+        document.getElementById('mpd-downloadBtn').parentNode.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
+      } catch (error) {
+        console.error('Error saving pattern:', error);
+        alert('There was an error saving your pattern. Please try again.');
+      }
+    }
+
+    // Initialize when loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      const baseColorSelect = document.getElementById('mpd-baseColor');
+      const accentControlsContainer = document.getElementById('mpd-accentControls');
+      const addAccentBtn = document.getElementById('mpd-addAccent');
+      const randomizeBtn = document.getElementById('mpd-randomizeBtn');
+      const downloadBtn = document.getElementById('mpd-downloadBtn');
+
+      baseColorSelect.addEventListener('change', updatePreview);
+      addAccentBtn.addEventListener('click', () => {
+        if (document.querySelectorAll('.mpd-accent-control').length < 5) {  // Increased to 5 accent colors
+          accentControlsContainer.appendChild(createAccentControl());
+          updatePreview();  
+        }
+      });
+
+      randomizeBtn.addEventListener('click', randomizeDesign);
+      downloadBtn.addEventListener('click', downloadDesign);
+
+      // Start with a random design instead of default
+      randomizeDesign();
+    });
+  </script>
+</body>
+</html>
